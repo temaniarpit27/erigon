@@ -345,7 +345,7 @@ func (tab *Table) doRevalidate(done chan<- struct{}) {
 	// Also fetch record if the node replied and returned a higher sequence number.
 	if last.Seq() < remoteSeq {
 		if n, err := tab.net.RequestENR(unwrapNode(last)); err != nil {
-			tab.log.Trace("ENR request failed", "id", last.ID(), "addr", last.addr(), "err", err)
+			tab.log.Debug("ENR request failed", "id", last.ID().TerminalString(), "addr", last.addr(), "err", err)
 		} else {
 			last = &node{Node: *n, addedAt: last.addedAt, livenessChecks: last.livenessChecks}
 		}
@@ -357,16 +357,16 @@ func (tab *Table) doRevalidate(done chan<- struct{}) {
 	if rErr == nil {
 		// The node responded, move it to the front.
 		last.livenessChecks++
-		tab.log.Trace("Revalidated node", "b", bi, "id", last.ID(), "checks", last.livenessChecks)
+		tab.log.Debug("Revalidated node", "b", bi, "id", last.ID().TerminalString(), "checks", last.livenessChecks)
 		tab.bumpInBucket(b, last)
 		return
 	}
 	// No reply received, pick a replacement or delete the node if there aren't
 	// any replacements.
 	if r := tab.replace(b, last); r != nil {
-		tab.log.Trace("Replaced dead node", "b", bi, "id", last.ID(), "ip", last.IP(), "checks", last.livenessChecks, "r", r.ID(), "rip", r.IP())
+		tab.log.Debug("Replaced dead node", "b", bi, "id", last.ID().TerminalString(), "ip", last.IP(), "checks", last.livenessChecks, "r", r.ID().TerminalString(), "rip", r.IP())
 	} else {
-		tab.log.Trace("Removed dead node", "b", bi, "id", last.ID(), "ip", last.IP(), "checks", last.livenessChecks)
+		tab.log.Debug("Removed dead node", "b", bi, "id", last.ID().TerminalString(), "ip", last.IP(), "checks", last.livenessChecks)
 	}
 }
 

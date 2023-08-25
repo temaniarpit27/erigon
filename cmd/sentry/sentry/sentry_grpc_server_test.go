@@ -62,7 +62,7 @@ func startHandshake(
 	errChan chan error,
 ) {
 	go func() {
-		_, err := handShake(ctx, status, pipe, protocolVersion, protocolVersion)
+		_, err := handShake(ctx, status, pipe, protocolVersion, protocolVersion, nil)
 		errChan <- err
 	}()
 }

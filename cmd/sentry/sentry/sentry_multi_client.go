@@ -600,6 +600,7 @@ func (cs *MultiClient) getBlockHeaders66(ctx context.Context, inreq *proto_sentr
 	if err != nil {
 		return fmt.Errorf("encode header response: %w", err)
 	}
+	cs.logger.Trace("getBlockHeaders66 sending BLOCK_HEADERS", "len", len(headers))
 	outreq := proto_sentry.SendMessageByIdRequest{
 		PeerId: inreq.PeerId,
 		Data: &proto_sentry.OutboundMessageData{
@@ -709,6 +710,8 @@ func (cs *MultiClient) HandleInboundMessage(ctx context.Context, message *proto_
 			err = fmt.Errorf("%+v, msgID=%s, trace: %s", rec, message.Id.String(), dbg.Stack())
 		}
 	}() // avoid crash because Erigon's core does many things
+
+	cs.logger.Trace("HandleInboundMessage", "msgID", message.Id.String())
 
 	err = cs.handleInboundMessage(ctx, message, sentry)
 

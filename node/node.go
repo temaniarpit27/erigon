@@ -117,6 +117,9 @@ func (n *Node) Start() error {
 	// preallocation leads to bugs here
 	var started []Lifecycle //nolint:prealloc
 	var err error
+
+	n.logger.Debug("Starting services")
+
 	for _, lifecycle := range lifecycles {
 		if err = lifecycle.Start(); err != nil {
 			break
@@ -125,6 +128,8 @@ func (n *Node) Start() error {
 	}
 	// Check if any lifecycle failed to start.
 	if err != nil {
+		n.logger.Debug("Startup failed, stopping services", "err", err)
+
 		stopErr := n.stopServices(started)
 		if stopErr != nil {
 			n.logger.Warn("Failed to doClose for this node", "err", stopErr)
@@ -146,11 +151,14 @@ func (n *Node) Close() error {
 	n.lock.Lock()
 	state := n.state
 	n.lock.Unlock()
+
 	switch state {
 	case initializingState:
 		// The node was never started.
 		return n.doClose(nil)
 	case runningState:
+		n.logger.Debug("Close - stopping services")
+
 		// The node was started, release resources acquired by Start().
 		var errs []error
 		if err := n.stopServices(n.lifecycles); err != nil {

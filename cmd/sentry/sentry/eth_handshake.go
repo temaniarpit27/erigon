@@ -3,11 +3,13 @@ package sentry
 import (
 	"fmt"
 
+	"github.com/ledgerwatch/erigon-lib/common/hexutility"
 	"github.com/ledgerwatch/erigon-lib/gointerfaces"
 	proto_sentry "github.com/ledgerwatch/erigon-lib/gointerfaces/sentry"
 	"github.com/ledgerwatch/erigon/core/forkid"
 	"github.com/ledgerwatch/erigon/eth/protocols/eth"
 	"github.com/ledgerwatch/erigon/p2p"
+	"github.com/ledgerwatch/log/v3"
 )
 
 func readAndValidatePeerStatusMessage(
@@ -15,6 +17,7 @@ func readAndValidatePeerStatusMessage(
 	status *proto_sentry.StatusData,
 	version uint,
 	minVersion uint,
+	logger log.Logger,
 ) (*eth.StatusPacket, error) {
 	msg, err := rw.ReadMsg()
 	if err != nil {
@@ -28,6 +31,31 @@ func readAndValidatePeerStatusMessage(
 	}
 
 	err = checkPeerStatusCompatibility(reply, status, version, minVersion)
+
+	if logger != nil {
+		genesis := gointerfaces.ConvertH256ToHash(status.ForkData.Genesis)
+
+		if err != nil {
+			// errors are retpoted at a higher level - which makes this
+			logger.Trace("[p2p] Received status",
+				"networkId", reply.NetworkID,
+				"version", reply.ProtocolVersion,
+				"genesis", hexutility.Bytes(genesis[:]).String(),
+				"td", reply.TD,
+				"head", reply.Head,
+				"forkId", reply.ForkID,
+				"err", err)
+		} else {
+			logger.Debug("[p2p] Received status",
+				"networkId", reply.NetworkID,
+				"version", reply.ProtocolVersion,
+				"genesis", hexutility.Bytes(genesis[:]).String(),
+				"td", reply.TD,
+				"head", reply.Head,
+				"forkId", reply.ForkID)
+		}
+	}
+
 	return reply, err
 }
 

@@ -274,6 +274,8 @@ loop:
 		}
 	}
 
+	p.log.Debug("Peer.run returns", "reason", reason, "remoteRequested", remoteRequested, "err", err)
+
 	close(p.closed)
 	p.rw.close(reason)
 	p.wg.Wait()

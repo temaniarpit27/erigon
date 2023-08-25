@@ -13,6 +13,7 @@ import (
 	"math/rand"
 	"net"
 	"sort"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"syscall"
@@ -273,6 +274,7 @@ func handShake(
 	rw p2p.MsgReadWriter,
 	version uint,
 	minVersion uint,
+	logger log.Logger,
 ) (*libcommon.Hash, error) {
 	// Send out own handshake in a new thread
 	errChan := make(chan error, 2)
@@ -303,7 +305,7 @@ func handShake(
 
 	go func() {
 		defer debug.LogPanic()
-		status, err := readAndValidatePeerStatusMessage(rw, status, version, minVersion)
+		status, err := readAndValidatePeerStatusMessage(rw, status, version, minVersion, logger)
 
 		if err == nil {
 			resultChan <- status
@@ -574,8 +576,9 @@ func NewGrpcServer(ctx context.Context, dialCandidates func() enode.Iterator, re
 	if protocol == direct.ETH67 {
 		protocols = append(protocols, direct.ETH66)
 	}
-	for _, p := range protocols {
-		protocol := p
+
+	for i := range protocols {
+		protocol := protocols[i]
 		ss.Protocols = append(ss.Protocols, p2p.Protocol{
 			Name:           eth.ProtocolName,
 			Version:        protocol,
@@ -588,7 +591,20 @@ func NewGrpcServer(ctx context.Context, dialCandidates func() enode.Iterator, re
 					logger.Trace("[p2p] peer already has connection", "peerId", printablePeerID)
 					return nil
 				}
-				logger.Trace("[p2p] start with peer", "peerId", printablePeerID)
+
+				var dir string
+
+				if len(ss.P2pServer.Config.ListenAddr) > 0 {
+					listenPort := ss.P2pServer.Config.ListenAddr[strings.LastIndex(ss.P2pServer.Config.ListenAddr, ":")+1:]
+
+					if strings.HasSuffix(peer.LocalAddr().String(), listenPort) {
+						dir = "in"
+					} else {
+						dir = "out"
+					}
+				}
+
+				logger.Trace("[p2p] start with peer", "version", protocol, "peerId", printablePeerID, "dir", dir, "remote", peer.RemoteAddr())
 
 				peerInfo := NewPeerInfo(peer, rw)
 				peerInfo.protocol = protocol
@@ -604,13 +620,14 @@ func NewGrpcServer(ctx context.Context, dialCandidates func() enode.Iterator, re
 					return err
 				}
 
-				peerBestHash, err := handShake(ctx, status, rw, protocol, protocol)
+				peerBestHash, err := handShake(ctx, status, rw, protocol, protocol, logger)
 
 				if err != nil {
-					if errors.Is(err, NetworkIdMissmatchErr) || errors.Is(err, io.EOF) || errors.Is(err, p2p.ErrShuttingDown) {
-						logger.Trace("[p2p] Handshake failure", "peer", printablePeerID, "err", err)
+					if errors.Is(err, p2p.ErrShuttingDown) || (errors.Is(err, io.EOF) && strings.HasPrefix(err.Error(), "receive")) || dir == "in" {
+						logger.Trace("[p2p] Handshake failure", "version", protocol, "peer", printablePeerID, "dir", dir, "remote", peer.RemoteAddr(), "err", err)
 					} else {
-						logger.Debug("[p2p] Handshake failure", "peer", printablePeerID, "err", err)
+						logger.Debug("[p2p] Handshake failure", "version", protocol, "peer", printablePeerID,
+							"dir", dir, "remote", peer.RemoteAddr(), "err", err)
 					}
 					return fmt.Errorf("[p2p] handshake to peer %s: %w", printablePeerID, err)
 				}
@@ -636,7 +653,7 @@ func NewGrpcServer(ctx context.Context, dialCandidates func() enode.Iterator, re
 					ss.hasSubscribers,
 					logger,
 				) // runPeer never returns a nil error
-				logger.Trace("[p2p] error while running peer", "peerId", printablePeerID, "err", err)
+				logger.Trace("[p2p] error while running peer", "peerId", printablePeerID, "name", peer.Name(), "dir", dir, "remote", peer.RemoteAddr(), "err", err)
 				ss.sendGonePeerToClients(gointerfaces.ConvertHashToH512(peerID))
 				return nil
 			},
@@ -728,6 +745,7 @@ func (ss *GrpcServer) removePeer(peerID [64]byte) {
 }
 
 func (ss *GrpcServer) writePeer(logPrefix string, peerInfo *PeerInfo, msgcode uint64, data []byte, ttl time.Duration) {
+	ss.logger.Trace(logPrefix, "msgcode", msgcode)
 	peerInfo.Async(func() {
 		err := peerInfo.rw.WriteMsg(p2p.Msg{Code: msgcode, Size: uint32(len(data)), Payload: bytes.NewReader(data)})
 		if err != nil {

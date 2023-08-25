@@ -20,6 +20,7 @@ package forkid
 import (
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"hash/crc32"
 	"math"
 	"math/big"
@@ -28,6 +29,7 @@ import (
 
 	"github.com/ledgerwatch/erigon-lib/chain"
 	libcommon "github.com/ledgerwatch/erigon-lib/common"
+	"github.com/ledgerwatch/erigon-lib/common/hexutility"
 	"github.com/ledgerwatch/log/v3"
 	"golang.org/x/exp/slices"
 
@@ -50,6 +52,10 @@ var (
 type ID struct {
 	Hash [4]byte // CRC32 checksum of the genesis block and passed fork block numbers
 	Next uint64  // Block number of the next upcoming fork, or 0 if no forks are known
+}
+
+func (id ID) String() string {
+	return fmt.Sprintf("%s:%d", hexutility.Bytes(id.Hash[:]).String(), id.Next)
 }
 
 // Filter is a fork id filter to validate a remotely advertised ID.
