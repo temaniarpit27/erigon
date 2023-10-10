@@ -481,6 +481,8 @@ func logProgressHeaders(logPrefix string, prev, now uint64, logger log.Logger) u
 		return now
 	}
 
+	runtime.GC()
+
 	var m runtime.MemStats
 	dbg.ReadMemStats(&m)
 	logger.Info(fmt.Sprintf("[%s] Wrote block headers", logPrefix),
