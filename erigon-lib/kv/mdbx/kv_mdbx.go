@@ -91,6 +91,9 @@ func NewMDBX(log log.Logger) MdbxOpts {
 		shrinkThreshold: -1, // default
 		label:           kv.InMem,
 	}
+
+	log.Info("NewMDBX MdbxOpts", "dirtySpace", opts.dirtySpace)
+
 	return opts
 }
 
