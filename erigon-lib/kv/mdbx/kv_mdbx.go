@@ -38,7 +38,6 @@ import (
 	"github.com/ledgerwatch/erigon-lib/kv/iter"
 	"github.com/ledgerwatch/erigon-lib/kv/order"
 	"github.com/ledgerwatch/log/v3"
-	"github.com/pbnjay/memory"
 	"golang.org/x/exp/maps"
 	"golang.org/x/sync/semaphore"
 )
@@ -83,7 +82,7 @@ func NewMDBX(log log.Logger) MdbxOpts {
 
 		// default is (TOTAL_RAM+AVAILABLE_RAM)/42/pageSize
 		// but for reproducibility of benchmarks - please don't rely on Available RAM
-		dirtySpace: 2 * (memory.TotalMemory() / 42),
+		dirtySpace: 1024 * 1024 * 2,
 
 		mapSize:         DefaultMapSize,
 		growthStep:      DefaultGrowthStep,
