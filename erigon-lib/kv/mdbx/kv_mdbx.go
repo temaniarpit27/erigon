@@ -309,6 +309,7 @@ func (opts MdbxOpts) Open() (kv.RwDB, error) {
 		if err = env.SetOption(mdbx.OptDpReverseLimit, dpReserveLimit*2); err != nil {
 			return nil, err
 		}
+		log.Info("env.SetOption(mdbx.OptDpReverseLimit", "OptDpReverseLimit", dpReserveLimit*2)
 
 		if err = env.SetOption(mdbx.OptTxnDpLimit, opts.dirtySpace/opts.pageSize); err != nil {
 			return nil, err
