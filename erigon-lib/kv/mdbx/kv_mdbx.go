@@ -92,6 +92,7 @@ func NewMDBX(log log.Logger) MdbxOpts {
 	}
 
 	log.Info("NewMDBX MdbxOpts", "dirtySpace", opts.dirtySpace)
+	log.Info("NewMDBX MdbxOpts", "pageSize", opts.pageSize)
 
 	return opts
 }
@@ -300,6 +301,7 @@ func (opts MdbxOpts) Open() (kv.RwDB, error) {
 		if err = env.SetOption(mdbx.OptTxnDpInitial, txnDpInitial*2); err != nil {
 			return nil, err
 		}
+		log.Info("env.SetOption(mdbx.OptTxnDpInitial", "OptTxnDpInitial", txnDpInitial*2)
 		dpReserveLimit, err := env.GetOption(mdbx.OptDpReverseLimit)
 		if err != nil {
 			return nil, err
