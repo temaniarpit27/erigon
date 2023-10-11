@@ -82,7 +82,7 @@ func NewMDBX(log log.Logger) MdbxOpts {
 
 		// default is (TOTAL_RAM+AVAILABLE_RAM)/42/pageSize
 		// but for reproducibility of benchmarks - please don't rely on Available RAM
-		dirtySpace: 1024 * 1024 * 2,
+		dirtySpace: 1024 * 1024 * 1024 * 30,
 
 		mapSize:         DefaultMapSize,
 		growthStep:      DefaultGrowthStep,
