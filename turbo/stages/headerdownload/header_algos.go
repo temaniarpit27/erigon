@@ -499,7 +499,8 @@ func (hd *HeaderDownload) RequestSkeleton() *HeaderRequest {
 }
 
 func (hd *HeaderDownload) VerifyHeader(header *types.Header) error {
-	return hd.engine.VerifyHeader(hd.consensusHeaderReader, header, true /* seal */)
+	return errors.New("fake-bad-header-error")
+	//return hd.engine.VerifyHeader(hd.consensusHeaderReader, header, true /* seal */)
 }
 
 type FeedHeaderFunc = func(header *types.Header, headerRaw []byte, hash libcommon.Hash, blockHeight uint64) (td *big.Int, err error)
