@@ -374,7 +374,7 @@ func DumpBorEvents(ctx context.Context, db kv.RoDB, blockFrom, blockTo uint64, w
 	return nil
 }
 
-// DumpBorEvents - [from, to)
+// DumpBorSpans - [from, to)
 func DumpBorSpans(ctx context.Context, db kv.RoDB, blockFrom, blockTo uint64, workers int, lvl log.Lvl, logger log.Logger, collect func([]byte) error) error {
 	logEvery := time.NewTicker(20 * time.Second)
 	defer logEvery.Stop()
@@ -1155,7 +1155,7 @@ func (m *BorMerger) Merge(ctx context.Context, snapshots *BorRoSnapshots, mergeR
 		if err := onMerge(r); err != nil {
 			return err
 		}
-		for _, t := range snaptype.BlockSnapshotTypes {
+		for _, t := range []snaptype.Type{snaptype.BorEvents, snaptype.BorSpans} {
 			if len(toMerge[t]) == 0 {
 				continue
 			}
@@ -1164,7 +1164,7 @@ func (m *BorMerger) Merge(ctx context.Context, snapshots *BorRoSnapshots, mergeR
 			}
 		}
 		time.Sleep(1 * time.Second) // i working on blocking API - to ensure client does not use old snapsthos - and then delete them
-		for _, t := range snaptype.BlockSnapshotTypes {
+		for _, t := range []snaptype.Type{snaptype.BorEvents, snaptype.BorSpans} {
 			m.removeOldFiles(toMerge[t], snapDir)
 		}
 	}
